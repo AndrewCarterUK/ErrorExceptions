@@ -4,30 +4,32 @@ namespace ErrorExceptions;
 
 use ErrorException;
 
-require_once 'ConfigurationExceptions.php';
-require_once 'CoreExceptions.php';
-require_once 'IOExceptions.php';
-require_once 'MathExceptions.php';
-
 class ErrorExceptions {
-
     protected $callbacks = array();
     protected $errors = E_ALL;
-    protected static $coreExceptions = array();
     protected $exceptions = array();
     protected $failureCallbacks = array();
     protected $lastError = array();
     protected $registered = false;
 
-    public static function addMultipleCoreExceptions(array $exceptions) {
-        static::$coreExceptions = array_merge_recursive_correct(
-            $exceptions, static::$coreExceptions
-        );
+    private static function mergeExceptionArrays(array $array1, array $array2) {
+        foreach ($array2 as $key => $value) {
+            if (isset($array1[$key]) && is_array($array1[$key]) && is_array($value)) {
+                $array1[$key] = self::mergeExceptionArrays($array1[$key], $array2[$key]);
+            } else {
+                $array1[$key] = $value;
+            }
+        }
+        return $array1;
     }
 
     public function __construct($errorLevel = E_ALL) {
         $this->errors = $errorLevel;
-        $this->exceptions = static::$coreExceptions;
+
+        $this->addConfigurationExceptions();
+        $this->addCoreExceptions();
+        $this->addIOExceptions();
+        $this->addMathExceptions();
     }
 
     public function addCallback($callback) {
@@ -49,8 +51,8 @@ class ErrorExceptions {
         $this->exceptions[$errNo][$regex] = $exception;
     }
 
-    public function addMultipleExceptions(array $exceptions) {
-        $this->exceptions = array_merge_recursive_correct(
+    public function addExceptions(array $exceptions) {
+        $this->exceptions = self::mergeExceptionArrays(
             $exceptions, $this->exceptions
         );
     }
@@ -131,16 +133,199 @@ class ErrorExceptions {
         return $this->callFailedCallbacks($errNo, $errStr, $errFile, $errLine);
     }
 
-}
-
-function array_merge_recursive_correct(array $array1, array $array2) {
-    foreach ($array2 as $key => $value) {
-        if (isset($array1[$key]) && is_array($array1[$key]) && is_array($value)) {
-            $array1[$key] = array_merge_recursive_correct($array1[$key],
-                $array2[$key]);
-        } else {
-            $array1[$key] = $value;
-        }
+    private function addConfigurationExceptions() {
+        $this->addExceptions(array(
+            E_WARNING => array(
+                '/function is disabled/' => 'DisabledFeatureException',
+                '/has been disabled for security reasons/' => '',
+                '/open(_|\s)basedir/i' => 'OpenBaseDirException',
+                '/safe(_|\s)mode/i' => 'SafeModeException',
+                '/Unable to access .*/' => 'SafeModeException',
+            ),
+        ));
     }
-    return $array1;
+
+    private function addCoreExceptions() {
+        $this->addExceptions(array(
+            E_DEPRECATED => array(
+                '/./' => 'ErrorExceptions\\Core\\DeprecatedException',
+            ),
+            E_NOTICE => array(
+                '/Constant .* already defined/' => '\\LogicException',
+                '/Exceptions must be derived from the Exception/' => 'ErrorExceptions\\Core\\InvalidClassException',
+                '/failed to (flush|delete|delete and flush) buffer/' => 'ErrorExceptions\\Core\\OutputException',
+                '/(modify|assign|get) property of non-object/' => '\\LogicException',
+                '/(Illegal|Corrupt) member variable name/' => 'ErrorExceptions\\Core\\ParseException',
+                '/Indirect modification of overloaded property/' => '\\LogicException',
+                '/(Object|Array) .* to string conversion/' => 'ErrorExceptions\\Core\\TypeConversionException',
+                '/Object of class .* could not be converted to/' => 'ErrorExceptions\\Core\\TypeConversionException',
+                '/undefined constant/i' => 'ErrorExceptions\\Core\\UndefinedConstantException',
+                '/undefined (property|variable)/i' => 'ErrorExceptions\\Core\\UndefinedVariableException',
+                '/Undefined offset/' => 'ErrorExceptions\\Core\\OutOfBoundsException',
+                '/Uninitialized string offset/' => 'ErrorExceptions\\Core\\OutOfBoundsException',
+
+            ),
+            E_RECOVERABLE_ERROR => array(
+                '/__toString\(\) must return a string/' => 'ErrorExceptions\\Core\\InvalidReturnValueException',
+                '/Argument \d+ passed to .* must/' => 'ErrorExceptions\\Core\\InvalidArgumentException',
+                '/Cannot get arguments for calling closure/' => '\\LogicException',
+                '/Closure object cannot have properties/' => '\\LogicException',
+                '/Instantiation of .* is not allowed/' => '\\LogicException',
+                '/Object of class .* could not be converted to/' => 'ErrorExceptions\\Core\\TypeConversionException',
+            ),
+            E_STRICT => array(
+                '/Accessing static property .* as non static/' => 'ErrorExceptions\\Core\\StrictException',
+                '/Creating default object from empty value/' => 'ErrorExceptions\\Core\\UndefinedVariableException',
+                '/Non-static method .* be called statically/' => 'ErrorExceptions\\Core\\StrictException',
+                '/Redefining already defined constructor/' => 'ErrorExceptions\\Core\\ParseException',
+                '/Resource .* used as offset/' => 'ErrorExceptions\\Core\\TypeConversionException',
+                '/Static function .* should not be abstract/' => 'ErrorExceptions\\Core\\ParseException',
+            ),
+            E_WARNING => array(
+                '/__toString\(\) must return a string/' => 'ErrorExceptions\\Core\\InvalidReturnValueException',
+                '/a COM object/i' => '\\com_exception',
+                '/Argument \d+ not passed to function/' => '\\OutOfBoundsException',
+                '/bad type specified while parsing parameters/' => 'ErrorExceptions\\Core\\PHPCoreException',
+                '/called from outside a class/' => 'ErrorExceptions\\Core\\InvalidScopeException',
+                '/Can only handle single dimension variant arrays/' => '\\com_exception',
+                '/Cannot add element to the array/' => '\\RuntimeException',
+                '/Cannot add (user|internal) functions to return value/' => 'ErrorExceptions\\Core\\PHPCoreException',
+                '/Cannot convert to (real|ordinal) value/' => 'ErrorExceptions\\Core\\TypeConversionException',
+                '/Cannot (read|write) property of object - .* handler defined/' => 'ErrorExceptions\\Core\\PHPCoreException',
+                '/Cannot redeclare class/' => 'ErrorExceptions\\Core\\InvalidClassException',
+                '/Cannot unset offset in a non-array variable/' => '\\LogicException',
+                '/Cannot use a scalar value as an array/' => 'ErrorExceptions\\Core\\TypeConversionException',
+                '/class .* is undefined/' => 'ErrorExceptions\\Core\\InvalidClassException',
+                '/Class .* not found/' => 'ErrorExceptions\\Core\\InvalidClassException',
+                '/Class constants cannot be defined/' => '\\LogicException',
+                '/Clone method does not require arguments/' => 'ErrorExceptions\\Core\\ParseException',
+                '/Constants may only evaluate to scalar values/' => 'ErrorExceptions\\Core\\InvalidValueException',
+                '/converting from PHP array to VARIANT/' => 'ErrorExceptions\\Core\\TypeConversionException',
+                '/Could not convert string to unicode/i' => 'ErrorExceptions\\Core\\InvalidInputException',
+                '/Could not execute/' => '\\LogicException',
+                '/Could not find a factory/' => 'ErrorExceptions\\Core\\PHPCoreException',
+                '/could not obtain parameters for parsing/' => 'ErrorExceptions\\Core\\PHPCoreException',
+                '/expected to be a reference/' => 'ErrorExceptions\\Core\\ReferenceException',
+                '/expects at least \d+ parameters, \d+ given/' => '\\InvalidArgumentException',
+                '/expects the argument .* to be a valid callback/' => 'ErrorExceptions\\Core\\InvalidCallbackException',
+                '/expects parameter \d+ to be a valid callback/' => 'ErrorExceptions\\Core\\InvalidCallbackException',
+                '/failed allocating/i' => 'ErrorExceptions\\Core\\OutOfMemoryException',
+                '/failed to allocate/i' => 'ErrorExceptions\\Core\\OutOfMemoryException',
+                '/first parameter has to be/i' => '\\InvalidArgumentException',
+                '/First parameter must either be/' => '\\InvalidArgumentException',
+                '/function is not supported/' => '\\BadFunctionCallException',
+                '/handler .* did not return a/' => '\\LogicException',
+                '/Illegal offset type/' => '\\LogicException',
+                '/Illegal string offset/' => '\\OutOfBoundsException',
+                '/Illegal type returned from/' => 'ErrorExceptions\\Core\\InvalidReturnValueException',
+                '/Indirect modification of overloaded element/' => '\\LogicException',
+                '/Input variable nesting level exceeded/' => 'ErrorExceptions\\Core\\InvalidInputException',
+                '/invalid .* ID/i' => '\\InvalidArgumentException',
+                '/Invalid callback/' => 'ErrorExceptions\\Core\\InvalidCallbackException',
+                '/invalid date/'   => '\\InvalidArgumentException',
+                '/Invalid error type specified/' => '\\DomainException',
+                '/Illegal offset type/' => '\\DomainException',
+                '/invalid parameter given for/i' => '\\DomainException',
+                '/Invalid scanner mode/' => '\\DomainException',
+                '/is no longer supported/' => 'ErrorExceptions\\Core\\DeprecatedException',
+                '/is not a valid mode for/' => '\\DomainException',
+                '/is not a valid .* resource/' => '\\DomainException',
+                '/is not implemented/' => 'ErrorExceptions\\Core\\InvalidImplementationException',
+                '/is only valid for years between/i' => '\\OutOfRangeException',
+                '/is too long for/' => '\\DomainException',
+                '/may not be negative/i'    => '\\OutOfRangeException',
+                '/(modify|assign|get) property of non-object/' => '\\LogicException',
+                '/must be a name of .* class/' => 'ErrorExceptions\\Core\\InvalidClassException',
+                '/must be greather than/' => '\\RangeException',
+                '/must not return itself/' => 'ErrorExceptions\\Core\\InvalidReturnValueException',
+                '/must return a/' => 'ErrorExceptions\\Core\\InvalidReturnValueException',
+                '/no .* resource supplied/' => '\\InvalidArgumentException',
+                '/no function context/' => '\\LogicException',
+                '/not a dispatchable interface/' => '\\BadMethodCallException',
+                '/not supported on this platform/' => 'ErrorExceptions\\Core\\NotSupportedException',
+                '/Nothing returned from/' => 'ErrorExceptions\\Core\\InvalidReturnValueException',
+                '/object doesn\'t support property references/' => 'ErrorExceptions\\Core\\ReferenceException',
+                '/only one varargs specifier/' => 'ErrorExceptions\\Core\\PHPCoreException',
+                '/output handler .* conflicts with/' => 'ErrorExceptions\\Core\\ConflictException',
+                '/Parameter wasn\'t passed by reference/' => 'ErrorExceptions\\Core\\ReferenceException',
+                '/POST Content-Length of/' => 'ErrorExceptions\\Core\\InvalidInputException',
+                '/POST length does not match Content-Length/' => 'ErrorExceptions\\Core\\InvalidInputException',
+                '/request_startup.* failed/' => 'ErrorExceptions\\Core\\PHPCoreException',
+                '/should be >/' => '\\RangeException',
+                '/The magic method .* must have public/' => 'ErrorExceptions\\Core\\ParseException',
+                '/The use statement with non-compound name/' => 'ErrorExceptions\\Core\\ParseException',
+                '/this code not yet written/i' => 'ErrorExceptions\\Core\\WTFException',
+                '/timestamp value must be a positive value/i' => '\\\InvalidArgumentException',
+                '/type library constant .* already defined/i' => '\\LogicException',
+                '/Unable to find typeinfo using/i' => '\\RuntimeException',
+                '/Unknown .* list entry type in/' => 'ErrorExceptions\\Core\\PHPCoreException',
+                '/Unspecified error/' => 'ErrorExceptions\\Core\\UnknownErrorException',
+                '/Variable passed to .* is not an/' => '\\DomainException',
+                '/variant is not an/' => '\\InvalidArgumentException',
+                '/variant: failed to copy from/' => 'ErrorExceptions\\Core\\TypeConversionException',
+                '/Wrong parameter count for/' => '\\InvalidArgumentException',
+                '/year out of range/i' => '\\OutOfRangeException',
+                '/zval: conversion from/' => 'ErrorExceptions\\Core\\TypeConversionException',
+            ),
+        ));
+    }
+
+    private function addIOExceptions() {
+        $this->addExceptions(array(
+            E_NOTICE => array(
+                '/:\/\/ was never changed, nothing to restore/' => 'ErrorExceptions\\IO\\StreamWrapperException',
+                '/path was truncated to/' => 'ErrorExceptions\\IO\\InvalidPathException',
+                '/send of \d+ bytes failed/' => 'ErrorExceptions\\IO\\WriteFailureException',
+            ),
+            E_WARNING => array(
+                '/:\/\/ never existed, nothing to restore/' => 'ErrorExceptions\\IO\\StreamWrapperException',
+                '/Attempt to close cURL handle from a callback/' => 'ErrorExceptions\\IO\\CurlException',
+                '/bytes more data than requested/' => '\\OverflowException',
+                '/call the CURL/i' => 'ErrorExceptions\\IO\\CurlException',
+                '/cannot peek or fetch OOB data/' => 'ErrorExceptions\\IO\\ReadFailureException',
+                '/cannot read from a stream opened in/' => 'ErrorExceptions\\IO\\InvalidStreamException',
+                '/cannot seek/' => 'ErrorExceptions\\IO\\IOException',
+                '/cannot use stream opened in mode/' => 'ErrorExceptions\\IO\\InvalidStreamException',
+                '/cannot write OOB data/' => 'ErrorExceptions\\IO\\WriteFailureException',
+                '/Could not build curl_slist/' => 'ErrorExceptions\\IO\\CurlException',
+                '/could not extract hash key from/' => 'ErrorExceptions\\IO\\SSLException',
+                '/could not read .* data from stream/' => 'ErrorExceptions\\IO\\IOException',
+                '/cURL handle/' => 'ErrorExceptions\\IO\\CurlException',
+                '/CURLOPT/' => '\\InvalidArgumentException',
+                '/Failed opening .* for (inclusion|highlighting)/' => 'ErrorExceptions\\IO\\NotReadableException',
+                '/failed to bind to/' => 'ErrorExceptions\\IO\\IOException',
+                '/Failed to resolve/' => 'ErrorExceptions\\IO\\DNSException',
+                '/filename cannot be empty/' => 'ErrorExceptions\\IO\\InvalidFileNameException',
+                '/file handle is not writable/' => 'ErrorExceptions\\IO\\NotWritableException',
+                '/File name is longer than the maximum/' => 'ErrorExceptions\\IO\\InvalidFileNameException',
+                '/getaddrinfo failed/' => 'ErrorExceptions\\IO\\DNSException',
+                '/gethostbyname failed/' => 'ErrorExceptions\\IO\\DNSException',
+                '/Invalud curl configuration option/' => 'ErrorExceptions\\IO\\CurlException',
+                '/Invalid IP address/' => 'ErrorExceptions\\IO\\InvalidNetworkAddressException',
+                '/invalid URL/' => 'ErrorExceptions\\IO\\InvalidURLException',
+                '/No such file or directory/' => 'ErrorExceptions\\IO\\FileNotFoundException',
+                '/protocol .* disabled in curl/i' => 'ErrorExceptions\\IO\\InvalidProtocolException',
+                '/Protocol .* already defined/' => 'ErrorExceptions\\IO\\StreamWrapperException',
+                '/There was an error mcode=/' => 'ErrorExceptions\\IO\\CurlException',
+                '/this stream does not support SSL/' => 'ErrorExceptions\\IO\\SSLException',
+                '/unable to allocate stream/' => 'ErrorExceptions\\IO\\IOException',
+                '/Unable to find the wrapper/' => 'ErrorExceptions\\IO\\StreamWrapperException',
+                '/Unable to include uri/' => 'ErrorExceptions\\IO\\IOException',
+                '/Unable to include .* (URI|request)/' => 'ErrorExceptions\\IO\\IOException',
+                '/Unable to register wrapper/' => 'ErrorExceptions\\IO\\StreamWrapperException',
+                '/Unable to restore original .* wrapper/' => 'ErrorExceptions\\IO\\StreamWrapperException',
+                '/Unable to unregister protocol/' => 'ErrorExceptions\\IO\\StreamWrapperException',
+                '/URI lookup failed/' => 'ErrorExceptions\\IO\\DNSException',
+            ),
+        ));
+    }
+
+    private function addMathExceptions() {
+        $this->addExceptions(array(
+            E_WARNING => array(
+                '/Division by zero/'                 => 'ErrorExceptions\\Math\\ZeroDivisionException',
+                '/Square root of a negative number/' => 'ErrorExceptions\\Math\\MathException',
+            ),
+        ));
+    }
 }

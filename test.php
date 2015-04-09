@@ -1,8 +1,11 @@
 <?php
 
-require_once 'lib/ErrorExceptions/ErrorExceptions.php';
+use ErrorExceptions\ErrorExceptions;
+
+require_once 'vendor/autoload.php';
+
 error_reporting(E_ALL | E_DEPRECATED);
-$handler = new ErrorExceptions\ErrorExceptions(E_ALL | E_DEPRECATED);
+$handler = new ErrorExceptions(E_ALL | E_DEPRECATED);
 $handler->register();
 
 try {
@@ -14,7 +17,7 @@ try {
 
 try {
     fopen('bar.baz.biz', 'r');
-} catch (FileNotFoundException $e) {
+} catch (Exception $e) {
     // Caught it!
     var_dump(get_class($e));
 }

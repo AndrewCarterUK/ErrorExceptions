@@ -4,14 +4,13 @@
     "authors": [
         {
             "name": "Anthony Ferrara",
-            "email": "me@ircmaxell.com"
-        },
-        {
-            "name": "Andrew Carter",
-            "email": "andrewcarter1992@gmail.com"
+            "email": "ircmaxell@ircmaxell.com",
+            "homepage": "http://blog.ircmaxell.com"
         }
     ],
-    "require": {},
+    "require": {
+        "php": ">=5.3.2"
+    },
     "require-dev": {
         "phpunit/phpunit": "4.5.*"
     },

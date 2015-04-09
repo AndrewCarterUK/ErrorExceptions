@@ -312,6 +312,7 @@ class ErrorExceptions
                 '/getaddrinfo failed/'                             => 'ErrorExceptions\\IO\\DNSException',
                 '/gethostbyname failed/'                           => 'ErrorExceptions\\IO\\DNSException',
                 '/Invalud curl configuration option/'              => 'ErrorExceptions\\IO\\CurlException',
+                '/Address is not a valid IPv4 or IPv6 address/'    => 'ErrorExceptions\\IO\\InvalidNetworkAddressException',
                 '/Invalid IP address/'                             => 'ErrorExceptions\\IO\\InvalidNetworkAddressException',
                 '/invalid URL/'                                    => 'ErrorExceptions\\IO\\InvalidURLException',
                 '/No such file or directory/'                      => 'ErrorExceptions\\IO\\FileNotFoundException',

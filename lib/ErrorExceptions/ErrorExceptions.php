@@ -334,8 +334,7 @@ class ErrorExceptions
     {
         $this->addExceptions(array(
             E_WARNING => array(
-                '/Division by zero/'                 => 'ErrorExceptions\\Math\\ZeroDivisionException',
-                '/Square root of a negative number/' => 'ErrorExceptions\\Math\\MathException',
+                '/Division by zero/' => 'ErrorExceptions\\Math\\ZeroDivisionException',
             ),
         ));
     }

@@ -2,4 +2,6 @@
 
 namespace ErrorExceptions\Math;
 
-class ZeroDivisionException extends MathException {};
+use LogicException;
+
+class ZeroDivisionException extends LogicException {};

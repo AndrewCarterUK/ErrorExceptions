@@ -5,9 +5,16 @@
         {
             "name": "Anthony Ferrara",
             "email": "me@ircmaxell.com"
+        },
+        {
+            "name": "Andrew Carter",
+            "email": "andrewcarter1992@gmail.com"
         }
     ],
     "require": {},
+    "require-dev": {
+        "phpunit/phpunit": "4.5.*"
+    },
     "autoload": {
         "psr-4": {
             "ErrorExceptions\\": "lib/ErrorExceptions"

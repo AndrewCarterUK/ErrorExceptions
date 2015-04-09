@@ -307,6 +307,7 @@ class ErrorExceptions
                 '/Failed to resolve/'                              => 'ErrorExceptions\\IO\\DNSException',
                 '/filename cannot be empty/'                       => 'ErrorExceptions\\IO\\InvalidFileNameException',
                 '/file handle is not writable/'                    => 'ErrorExceptions\\IO\\NotWritableException',
+                '/File name too long/'                             => 'ErrorExceptions\\IO\\InvalidFileNameException',
                 '/File name is longer than the maximum/'           => 'ErrorExceptions\\IO\\InvalidFileNameException',
                 '/getaddrinfo failed/'                             => 'ErrorExceptions\\IO\\DNSException',
                 '/gethostbyname failed/'                           => 'ErrorExceptions\\IO\\DNSException',

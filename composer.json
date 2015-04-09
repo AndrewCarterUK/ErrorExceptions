@@ -1,0 +1,16 @@
+{
+    "name": "ircmaxell/error-exceptions",
+    "description": "A library for converting core PHP errors into ErrorExceptions",
+    "authors": [
+        {
+            "name": "Anthony Ferrara",
+            "email": "me@ircmaxell.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "ErrorExceptions\\": "lib/ErrorExceptions"
+        }
+    }
+}
